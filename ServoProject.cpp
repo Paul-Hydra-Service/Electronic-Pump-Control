@@ -1,3 +1,9 @@
+/*
+* ServoProject.cpp - Library for controlling the Dynamixel Servo on an OpenRB-150 Arduino using an analog joystick
+* Created by Paul Galiasso, June 6, 2024
+* For use of Hydra Service and subsequent products
+*/
+
 #include <Dynamixel2Arduino.h>
 #include "ServoProject.h"
 #include "Arduino.h"
@@ -182,7 +188,7 @@ int ServoProject::setDeadzone(int joyVal)
   return joyVal;
 }
 
-// Prints the CVS of the time and the servo angle
+// Prints the CSV of the time and the servo angle
 void ServoProject::printTable(int time, Dynamixel2Arduino dxl)
 {
     Serial.print(time / 1000);
