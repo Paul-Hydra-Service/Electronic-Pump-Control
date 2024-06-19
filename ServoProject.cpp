@@ -5,7 +5,7 @@
 */
 
 #include <Dynamixel2Arduino.h>
-#include "ServoProject.h"
+#include <ServoProject.h>
 #include "Arduino.h"
 
 #define JOYSTICK_MIN            0.0
@@ -23,7 +23,7 @@ ServoProject::ServoProject(int _maxServoAngle, int _minServoAngle, const uint8_t
   minServoAngle = _minServoAngle;
   DXL_ID = _ID;
   angle = _angle;
-}
+} 
 
 ServoProject::ServoProject(int _joystickMax, int _deadzone, pin_size_t _signalPin, pin_size_t _centerPin)
 {
@@ -48,44 +48,48 @@ void ServoProject::init(Dynamixel2Arduino dxl)
   }
 
 }
-void ServoProject::cycleMotion(Dynamixel2Arduino dxl)
+void ServoProject::cycleMotion(Dynamixel2Arduino dxl, int velocityDecrease)
 {
+  // Center area moving right
+  if(switchPress_4 && !switchPress_2 && !switchPress_3 && !switchPress_1)
+  {
+    // maximum velocity to the right
+    dxl.setGoalPosition(DXL_ID, maxServoAngle, UNIT_DEGREE);
+  }
+
+  // on the right side moving right
+  else if (switchPress_4 && switchPress_2 && !switchPress_3 && !switchPress_1)
+  {
+    // slower velocity to the right
+    dxl.setGoalPosition(DXL_ID, maxServoAngle - velocityDecrease, UNIT_DEGREE);
+  }
+
+  // on the right side moving left
+  else if (switchPress_1 && switchPress_2 && !switchPress_3 && !switchPress_4)
+  {
+    // slower velocity to the left
+    dxl.setGoalPosition(DXL_ID, minServoAngle + velocityDecrease, UNIT_DEGREE);
+  }
+
+  // Center area moving left
+  else if (switchPress_1 && !switchPress_3 && !switchPress_2 && !switchPress_4)
+  {
+    // maximum velicity to the left
+    dxl.setGoalPosition(DXL_ID, minServoAngle, UNIT_DEGREE);
+  }
   
-  if(switchPress_4 && !switchPress_2)
+  //left side moving left
+  else if (switchPress_1 && switchPress_3 && !switchPress_2 && !switchPress_4)
   {
-    dxl.setGoalPosition(DXL_ID, maxServoAngle, UNIT_DEGREE);
-    dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID, 80);
-    dxl.writeControlTableItem(PROFILE_ACCELERATION, DXL_ID, 20);
+    // slower velocity to the left
+    dxl.setGoalPosition(DXL_ID, minServoAngle + velocityDecrease, UNIT_DEGREE);
   }
-  else if (switchPress_4 && switchPress_2)
+  
+  // left side moving right
+  else if (switchPress_4 && switchPress_3 && !switchPress_2 && !switchPress_1)
   {
-    dxl.setGoalPosition(DXL_ID, maxServoAngle, UNIT_DEGREE);
-    dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID, 40);
-    dxl.writeControlTableItem(PROFILE_ACCELERATION, DXL_ID, -50);
-  }
-  else if (switchPress_1 && switchPress_2)
-  {
-    dxl.setGoalPosition(DXL_ID, minServoAngle, UNIT_DEGREE);
-    dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID, 40);
-    dxl.writeControlTableItem(PROFILE_ACCELERATION, DXL_ID, 50);
-  }
-  else if (switchPress_1 && !switchPress_3)
-  {
-    dxl.setGoalPosition(DXL_ID, minServoAngle, UNIT_DEGREE);
-    dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID, 80);
-    dxl.writeControlTableItem(PROFILE_ACCELERATION, DXL_ID, 20);
-  }
-  else if (switchPress_1 && switchPress_3)
-  {
-    dxl.setGoalPosition(DXL_ID, minServoAngle, UNIT_DEGREE);
-    dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID, 40);
-    dxl.writeControlTableItem(PROFILE_ACCELERATION, DXL_ID, -50);
-  }
-  else if (switchPress_4 && switchPress_3)
-  {
-    dxl.setGoalPosition(DXL_ID, maxServoAngle, UNIT_DEGREE);
-    dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID, 40);
-    dxl.writeControlTableItem(PROFILE_ACCELERATION, DXL_ID, 50);
+    // slower velocity to the right
+    dxl.setGoalPosition(DXL_ID, maxServoAngle - velocityDecrease, UNIT_DEGREE);
   }
   
 }
@@ -101,7 +105,7 @@ void ServoProject::readCyclePosition()
   }
   else if (switchPress_4 && !switchPress_3 && switchPress_2 && !switchPress_1)
   {
-    switchPress_1 = digitalRead(1);
+    switchPress_1 = digitalRead(0);
     if(switchPress_1)
     {
       switchPress_4 = false;
@@ -198,7 +202,7 @@ void ServoProject::printTable(int time, Dynamixel2Arduino dxl)
 }
 
 // increments the desired angle and decreses back to 0 when having reached 30 degrees
-void ServoProject::runThrough(bool forwards, Dynamixel2Arduino dxl)
+int ServoProject::runThrough(bool forwards, Dynamixel2Arduino dxl, int value)
 {
   if (abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - 182) >= 29)
   {
@@ -207,11 +211,62 @@ void ServoProject::runThrough(bool forwards, Dynamixel2Arduino dxl)
 
   if (forwards)
   {
-    up ? angle++ : angle--;
+    up ? value++ : value--;
   }
   else
   {
-    up ? angle-- : angle++;
+    up ? value-- : value++;
+  }
+  return value;
+}
+
+void ServoProject::autoLoop(bool forwards, Dynamixel2Arduino dxl)
+{
+  dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID, 20);
+  dxl.writeControlTableItem(PROFILE_ACCELERATION, DXL_ID, 5);
+  if (forwards)
+  {
+    //Serial.print("test");
+    if (up)
+    {
+      dxl.setGoalPosition(DXL_ID, maxServoAngle, UNIT_DEGREE);
+      //Serial.print("chicken");
+      if(abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - maxServoAngle) < 3)
+      {
+        up = false;
+        Serial.println("test");
+      }
+    }
+    else
+    {
+      Serial.print(up);
+      dxl.setGoalPosition(DXL_ID, (180), UNIT_DEGREE);
+      if (abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - (180)) < 3)
+      {
+        up = true;
+      }
+
+    }
+  }
+  else
+  {
+    if (up)
+    {
+      dxl.setGoalPosition(DXL_ID, minServoAngle, UNIT_DEGREE);
+      if(abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - minServoAngle) < 3)
+      {
+        up = false;
+      }
+    }
+    else
+    {
+      dxl.setGoalPosition(DXL_ID, 180, UNIT_DEGREE);
+      if (abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - (180)) < 3)
+      {
+        up = true;
+      }
+
+    }
   }
 }
 
@@ -226,7 +281,7 @@ void ServoProject::gatherData(bool forward, int time, Dynamixel2Arduino dxl)
   else if(start && time % 2000 > 1800 && pass) // every 2 seconds
   {
     pass = false;
-    runThrough(forward, dxl);
+    angle = runThrough(forward, dxl, angle);
     dxl.setGoalPosition(DXL_ID, angle, UNIT_DEGREE);
   }
   else if(start && time % 1000 > 800 && pass) // ensures that a second is not counted twice
@@ -281,7 +336,17 @@ int ServoProject::getMaxServoAngle()
   return maxServoAngle;
 }
 
+bool ServoProject::getOverride()
+{
+  return overRide;
+}
+
 void ServoProject::setJoystickMax(int max)
 {
   joystickMax = max;
+}
+
+void ServoProject::setOverride(bool status)
+{
+  overRide = status;
 }

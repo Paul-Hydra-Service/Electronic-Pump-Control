@@ -14,10 +14,20 @@ class ServoProject
   private:
 
     /*
+    * velocity 1 for the auto looping
+    */
+    double vel1 = 30;
+   
+    /*
+    * velocity 2 for the auto looping
+    */
+    double vel2;
+
+    /**
     * For the auto looping
     * True if the program is moving right
     */
-    bool switchPress_1; // first limit switch
+    bool switchPress_1 = true; // first limit switch
 
     /*
     * For the auto looping
@@ -59,7 +69,7 @@ class ServoProject
     * For testing
     * Saftey mechanism that returns control of the servo to the joystick if true
     */
-    bool overRide = false; // gives back control to joystick
+    bool overRide = true; // gives back control to joystick
 
     /*
     * velocity?
@@ -116,6 +126,11 @@ class ServoProject
     int joystickDeadzone;
 
     /*
+    * The velocity for the autoLooping
+    */
+    int loopVelocity;
+
+    /*
     * The analog pin connected to the signal of the joystick
     * Values: A0, A1, A2, A3, A4, A5, A6
     */
@@ -135,133 +150,141 @@ class ServoProject
     ServoProject();
 
     /*
-    * Constructor for the use of the servo
-    * Parameters: 
-    *    The maximum intended angle for the servo
-    *    The minimum intended angle for the servo
-    *    The ID for the Dynamixel Servo
-    *    The desired angle of the servo
+    * @Brief Constructor for the use of the servo
+    * @Param _maxServoAngle: The maximum intended angle for the servo
+    * @Param _minServoAngle:The minimum intended angle for the servo
+    * @Param ID: The ID for the Dynamixel Servo
+    * @Param _angle: The desired angle of the servo
     */
     ServoProject(int _maxServoAngle, int _minServoAngle, uint8_t _ID, int _angle);
 
     /*
-    * Constructor for the use of the analog joystick
-    * Paremeters:
-    *    The maximum value of the joystick.
-    *    The size of the deadzone of the joystick 
-    *    The analog pin used for the signal of the joystick
-    *    The analog pin used for the center-tap of the joystick
+    * @Brief Constructor for the use of the analog joystick
+    * @Param _joystickMax: The maximum value of the joystick.
+    * @Param _deadzone: The size of the deadzone of the joystick 
+    * @Param _signalPin: The analog pin used for the signal of the joystick
+    * @Param _centerPin: The analog pin used for the center-tap of the joystick
     */
     ServoProject(int _joystickMax, int _deadzone, pin_size_t _signalPin, pin_size_t _centerPin);
 
     /*
-    * Initializes the start of the testing functions
-    * Paremeters:
-    *    dxl: The Dynamixel Servo object
-    * Returns:
-    *    nothing
+    * @Breif Initializes the start of the testing functions, especially to keep track of the starting time
+    * @Param dxl: The Dynamixel Servo object
+    * @Returns: Nothing
     */
     void init(Dynamixel2Arduino dxl);
 
     /*
-    * Cycles the motion of the auto looping
-    * Parameters:
-    *    dxl: The dynamixel Servo Object
-    * Returns: nothing
+    * @Brief Cycles the motion of the auto looping
+    * @Param dxl: The dynamixel Servo Object
+    * @Returns: nothing
     */
-    void cycleMotion(Dynamixel2Arduino dxl);
+    void cycleMotion(Dynamixel2Arduino dxl, int);
 
     /*
-    * Reads the current postision of the auto looping and records it
-    * Parameters: none
-    * Returns: nothing
+    * @Brief Reads the current postision of the auto looping and records it
+    * @Param none
+    * @Returns: nothing
     */
     void readCyclePosition();
 
-    /*
-    * Calibrates the joystick using the center-tap
-    * Paremeters: none
-    * Returns: nothing
+    /* 
+    * @Brief Calibrates the joystick using the center-tap
+    * @Paremeters: none
+    * @Returns: nothing
     */
     void calibrate ();
 
     /*
-    * Sets the deadzone of the joystick, and 
-    * Parameters:
-    *    joyval: The raw value of the joystick
-    * Returns:
-    *    The value of the joystick with the deadzone applied
+    * @Brief Sets the deadzone of the joystick, and 
+    * @Param joyval: The raw value of the joystick
+    * @Returns: The value of the joystick with the deadzone applied
     */
     int setDeadzone(int joyVal);
 
     /*
-    * Prints the time and angle of the servo onto the serial mointor as a CSV
-    * Parameters:
-    *    time: the current time recorded in milliseconds by the arduino
-    *    dxl: the Dynamixel Servo object
-    * Returns: nothing
+    * @Brief Prints the time and angle of the servo onto the serial mointor as a CSV
+    * @Param time: the current time recorded in milliseconds by the arduino
+    * @Param dxl: the Dynamixel Servo object
+    * @Returns: nothing
     */
     void printTable(int time, Dynamixel2Arduino dxl);
 
     /*
-    * changes the desired angle of the servo for the testing
-    * Parameters:
-    *    Forwards: if the servo is set to move forwards or backwards
-    *    dxl: the Dynamixel Servo object
-    * Returns: nothing
+    * @Brief changes the desired angle of the servo for the testing
+    * @Param Forwards: if the servo is set to move forwards or backwards
+    * @Paramdxl: the Dynamixel Servo object
+    * @Returns: nothing
     */
-    void runThrough(bool forwards, Dynamixel2Arduino dxl);
+    int runThrough(bool forwards, Dynamixel2Arduino dxl, int);
 
     /*
-    * Testing fucntion that gathers the angle and time of the servo
-    * Parameters:
-    *    forwards: if the servo is set to move forwards or backwards
-    *    time: the current time recorded in milliseconds by the arduino
-    *    dxl: the Dynamixel Servo object
-    * Returns: nothing
+    * @Brief Testing fucntion that gathers the angle and time of the servo
+    * @Param forwards: if the servo is set to move forwards or backwards
+    * @Param time: the current time recorded in milliseconds by the arduino
+    * @Param dxl: the Dynamixel Servo object
+    * @Returns: nothing
     */
     void gatherData(bool forward, int time, Dynamixel2Arduino dxl);
 
     /*
-    * Tests the endurance of the servo, changes to a random angle every half second
-    * Parameters:
-    *    forwards: if the servo is set to move forwards or backwards
-    *    time: the current time recorded in milliseconds by the arduino
-    *    dxl: the Dynamixel Servo object
-    * Returns: nothing 
+    * @Brief Tests the endurance of the servo, changes to a random angle every half second
+    * @Param forwards: if the servo is set to move forwards or backwards
+    * @Param time: the current time recorded in milliseconds by the arduino
+    * @Param dxl: the Dynamixel Servo object
+    * @Returns: nothing 
     */
     void testEndurance(bool forwards, int time, Dynamixel2Arduino dxl);
 
     /*
-    * gets the starting time of the testing functions
-    * Parameters: none
-    * Returns:
-    *   the starting time in milliseconds
+    * @Brief gets the starting time of the testing functions
+    * @Param none
+    * @Returns: the starting time in milliseconds
     */
     unsigned long getStartTime();
 
     /*
-    * Returns the maximum value of the joystick
+    * @Returns the maximum value of the joystick
     */
     int getJoystickMax();
 
     /*
-    * Returns the minimum angle of the servo
+    * @Returns the minimum angle of the servo
     */
     int getMinServoAngle();
 
     /*
-    * Returns the maximum angle of the servo
+    * @Returns the maximum angle of the servo
     */
     int getMaxServoAngle();
 
     /*
-    * Sets the maximum angle of the joystick
-    * Parameters:
-    *    The maximum angle of the joystick
-    * Returns: nothing
+    * @Brief Sets the maximum angle of the joystick
+    * @Param The maximum angle of the joystick
+    * @Returns: nothing
     */
     void setJoystickMax(int);
+
+    /*
+    * @return whether override control is given to joystick
+    */
+    bool getOverride();
+
+    /*
+    * @brief Sets the status of override control
+    * @param the status of the override control
+    * @return nothing
+    */
+    void setOverride(bool);
+
+
+    /*
+    * @brief the timing for the acceleration in the cycle motion function
+    * @param Whether forwasrs or backwards
+    * @param the Dynamixel Servo object
+    * @return nothing
+    */
+    void autoLoop(bool, Dynamixel2Arduino);
 
 };
 
