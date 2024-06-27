@@ -97,7 +97,6 @@ void ServoProject::cycleMotion(Dynamixel2Arduino dxl, int velocityDecrease)
 
 void ServoProject::readCyclePosition()
 {
-
   // Reads the limit switches to find the current position. 
   if(switchPress_4 && !switchPress_3 && !switchPress_2 && !switchPress_1)
   {
@@ -287,6 +286,11 @@ void ServoProject::gatherData(bool forward, int time, Dynamixel2Arduino dxl)
   else if(start && time % 1000 > 800 && pass) // ensures that a second is not counted twice
   {
     pass = false;
+  }
+
+  if (!up && dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - 182 < 0.7)
+  {
+    overRide = true;
   }
 }
 
