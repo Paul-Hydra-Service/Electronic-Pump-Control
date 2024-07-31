@@ -106,6 +106,11 @@ class ServoProject
     int angle; // The desired angle of the servo
 
     /*
+    * the center angle of the servo
+    */
+    int centerAngle;
+
+    /*
     * the ID necessary for the Dynamixel Servo
     */
     uint8_t DXL_ID;
@@ -156,7 +161,7 @@ class ServoProject
     * @Param ID: The ID for the Dynamixel Servo
     * @Param _angle: The desired angle of the servo
     */
-    ServoProject(int _maxServoAngle, int _minServoAngle, uint8_t _ID, int _angle);
+    ServoProject(int _maxServoAngle, int _minServoAngle, uint8_t _ID, int _angle, int _centerAngle);
 
     /*
     * @Brief Constructor for the use of the analog joystick

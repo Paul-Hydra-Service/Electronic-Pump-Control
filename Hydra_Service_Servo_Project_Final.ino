@@ -79,7 +79,7 @@ using namespace ControlTableItem;
 // Testing settings
 #define FORWARDS                true
 #define BACKWARDS               false
-#define TEST                    2 // 1: slow incremetation from 0 - 30; 2: fast incremetation to test endurance; 0: limit switch setup
+#define TEST                    0 // 1: slow incremetation from 0 - 30; 2: fast incremetation to test endurance; 0: limit switch setup
 
 /*
 * These are subject to change
@@ -172,7 +172,7 @@ void loop() {
   dxl.setGoalPosition(DXL_ID, servoAngle, UNIT_DEGREE);
   servo.setOverride(true);
   dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID, SERVO_MAX_VELOCITY);
-    if(digitalRead(5))
+    if(!digitalRead(5))
     {
       servo.setOverride(false);
     }

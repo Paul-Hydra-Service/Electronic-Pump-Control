@@ -17,12 +17,13 @@ ServoProject::ServoProject()
 
 }
 
-ServoProject::ServoProject(int _maxServoAngle, int _minServoAngle, const uint8_t _ID, int _angle)
+ServoProject::ServoProject(int _maxServoAngle, int _minServoAngle, const uint8_t _ID, int _angle, int _centerAngle)
 {
   maxServoAngle = _maxServoAngle;
   minServoAngle = _minServoAngle;
   DXL_ID = _ID;
   angle = _angle;
+  centerAngle = _centerAngle;
 } 
 
 ServoProject::ServoProject(int _joystickMax, int _deadzone, pin_size_t _signalPin, pin_size_t _centerPin)
@@ -35,14 +36,14 @@ ServoProject::ServoProject(int _joystickMax, int _deadzone, pin_size_t _signalPi
 
 void ServoProject::init(Dynamixel2Arduino dxl)
 {
-  if (!start && digitalRead(5))
+  if (!start && !digitalRead(5))
   {
     startTime = millis();
     start = true;
-    angle = 182;
+    angle = centerAngle;
     up = true;
   }
-  else if (!up && abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE)-182) < 0.25)
+  else if (!up && abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE)-centerAngle) < 0.25)
   {
     start = false;
   }
@@ -100,11 +101,11 @@ void ServoProject::readCyclePosition()
   // Reads the limit switches to find the current position. 
   if(switchPress_4 && !switchPress_3 && !switchPress_2 && !switchPress_1)
   {
-    switchPress_2 = digitalRead(2);
+    switchPress_2 = !digitalRead(2);
   }
   else if (switchPress_4 && !switchPress_3 && switchPress_2 && !switchPress_1)
   {
-    switchPress_1 = digitalRead(0);
+    switchPress_1 = !digitalRead(0);
     if(switchPress_1)
     {
       switchPress_4 = false;
@@ -112,15 +113,15 @@ void ServoProject::readCyclePosition()
   }
   else if (!switchPress_4 && !switchPress_3 && switchPress_2 && switchPress_1)
   {
-    switchPress_2 = !digitalRead(2);
+    switchPress_2 = digitalRead(2);
   }
   else if (!switchPress_4 && !switchPress_3 && !switchPress_2 && switchPress_1)
   {
-    switchPress_3 = digitalRead(3);
+    switchPress_3 = !digitalRead(3);
   }
   else if (!switchPress_4 && switchPress_3 && !switchPress_2 && switchPress_1)
   {
-    switchPress_4 = digitalRead(4);
+    switchPress_4 = !digitalRead(4);
     if (switchPress_4)
     {
       switchPress_1 = false;
@@ -128,7 +129,7 @@ void ServoProject::readCyclePosition()
   }
   else if (switchPress_4 && switchPress_3 && !switchPress_2 && !switchPress_1)
   {
-    switchPress_3 = !digitalRead(3);
+    switchPress_3 = digitalRead(3);
   }
 
   // Error readouts
@@ -196,14 +197,14 @@ void ServoProject::printTable(int time, Dynamixel2Arduino dxl)
 {
     Serial.print(time / 1000);
     Serial.print(",");
-    Serial.print(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - 182);
+    Serial.print(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - centerAngle);
     Serial.println();
 }
 
 // increments the desired angle and decreses back to 0 when having reached 30 degrees
 int ServoProject::runThrough(bool forwards, Dynamixel2Arduino dxl, int value)
 {
-  if (abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - 182) >= 29)
+  if (abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - centerAngle) >= 29)
   {
     up = false;
   }
@@ -239,8 +240,8 @@ void ServoProject::autoLoop(bool forwards, Dynamixel2Arduino dxl)
     else
     {
       Serial.print(up);
-      dxl.setGoalPosition(DXL_ID, (180), UNIT_DEGREE);
-      if (abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - (180)) < 3)
+      dxl.setGoalPosition(DXL_ID, (centerAngle), UNIT_DEGREE);
+      if (abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - (centerAngle)) < 3)
       {
         up = true;
       }
@@ -259,8 +260,8 @@ void ServoProject::autoLoop(bool forwards, Dynamixel2Arduino dxl)
     }
     else
     {
-      dxl.setGoalPosition(DXL_ID, 180, UNIT_DEGREE);
-      if (abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - (180)) < 3)
+      dxl.setGoalPosition(DXL_ID, centerAngle, UNIT_DEGREE);
+      if (abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - (centerAngle)) < 3)
       {
         up = true;
       }
@@ -288,7 +289,7 @@ void ServoProject::gatherData(bool forward, int time, Dynamixel2Arduino dxl)
     pass = false;
   }
 
-  if (!up && dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - 182 < 0.7)
+  if (!up && abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - centerAngle) < 0.25)
   {
     overRide = true;
   }
@@ -300,7 +301,7 @@ void ServoProject::testEndurance(bool forwards, int time, Dynamixel2Arduino dxl)
   {
     if((time % 500) < 20 && !pass)
     {
-      dxl.setGoalPosition(DXL_ID, rand() % 30 + 182, UNIT_DEGREE);
+      dxl.setGoalPosition(DXL_ID, rand() % 30 + centerAngle, UNIT_DEGREE);
     }
     else if(time % 500 > 20 && pass)
     {
@@ -311,7 +312,7 @@ void ServoProject::testEndurance(bool forwards, int time, Dynamixel2Arduino dxl)
   {
     if((time % 500) < 20 && !pass)
     {
-      dxl.setGoalPosition(DXL_ID, 182 - (rand() % 30), UNIT_DEGREE);
+      dxl.setGoalPosition(DXL_ID, centerAngle - (rand() % 30), UNIT_DEGREE);
     }
     else if(time % 500 > 20 && pass)
     {
