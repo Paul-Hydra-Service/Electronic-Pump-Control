@@ -71,22 +71,25 @@ using namespace ControlTableItem;
 #define CENTER_TAP              A0
 
 // Servo settings
+#define ANGLE_CHANGE            30
+#define MIDDLE_ANGLE            180
 #define SERVO_MIN_ANGLE         150  //149
 #define SERVO_MAX_ANGLE         211  //225
 
 // Testing settings
 #define FORWARDS                true
 #define BACKWARDS               false
+#define TEST                    2 // 1: slow incremetation from 0 - 30; 2: fast incremetation to test endurance; 0: limit switch setup
 
 /*
 * These are subject to change
 * User may change the number to fit their prefrences.
 */
 #define JOYSTICK_DEADZONE       75.0  // 75 is the default. Range: 0-510
-#define SERVO_MAX_VELOCITY      50    // 50 is the default. Range: 1-32767
+#define SERVO_MAX_VELOCITY      190    // 50 is the default. Range: 1-32767
 #define LOOP_SLOW_VELOCITY      20    // 20 is the default. Range: 0-30
 
-ServoProject servo(SERVO_MAX_ANGLE, SERVO_MIN_ANGLE, DXL_ID, 182);
+ServoProject servo(MIDDLE_ANGLE + ANGLE_CHANGE, MIDDLE_ANGLE - ANGLE_CHANGE, DXL_ID, MIDDLE_ANGLE, MIDDLE_ANGLE);
 ServoProject joystick(JOYSTICK_MAX, JOYSTICK_DEADZONE, JOYSTICK_PIN, CENTER_TAP);
 
 void setup() {
@@ -105,7 +108,7 @@ void setup() {
   dxl.setOperatingMode(DXL_ID, OP_POSITION);
   dxl.torqueOn(DXL_ID);
 
-  dxl.setGoalPosition(DXL_ID, 182.0, UNIT_DEGREE); // Set home position to 180 degrees
+  dxl.setGoalPosition(DXL_ID, MIDDLE_ANGLE, UNIT_DEGREE); // Set home position to 180 degrees
 
   // turn on LED to confirm servo initialization then turn off after 2s
   Serial.println(dxl.writeControlTableItem(LED, DXL_ID, 1));
@@ -143,56 +146,39 @@ void loop() {
 
   // the starting for the testing functions
   servo.init(dxl);
-  int currentTime = millis() - joystick.getStartTime();
-  if (abs(servoAngle - 180) < 2 && !joystick.getOverride())
+  int currentTime = millis() - servo.getStartTime();
+  if (abs(servoAngle - MIDDLE_ANGLE) < 2 && !servo.getOverride())
   {
-    //servo.gatherData(FORWARDS, currentTime, dxl);
-    //servo.testEndurance(FORWARDS, currentTime, dxl);
-    servo.readCyclePosition();
-    servo.cycleMotion(dxl, LOOP_SLOW_VELOCITY);
-    //Serial.print("test");
-    //servo.autoLoop(false, dxl);    
-    /*
-    if (up)
+    if(TEST == 1)
     {
-      dxl.setGoalPosition(DXL_ID, SERVO_MAX_ANGLE, UNIT_DEGREE);
-      if(abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - SERVO_MAX_ANGLE) < 1)
-      {
-        up = false;
-      }
+      servo.gatherData(FORWARDS, currentTime, dxl);
+    }
+    else if(TEST == 2)
+    {
+      //servo.testEndurance(FORWARDS, currentTime, dxl);
+      servo.autoLoop(false, dxl);
     }
     else
     {
-      dxl.setGoalPosition(DXL_ID, SERVO_MIN_ANGLE, UNIT_DEGREE);
-      if (abs(dxl.getPresentPosition(DXL_ID, UNIT_DEGREE) - SERVO_MIN_ANGLE) < 1)
-      {
-        up = true;
-      }
-
+      servo.readCyclePosition();
+      servo.cycleMotion(dxl, LOOP_SLOW_VELOCITY);
     }
-
-    if (digitalRead(0))
-    {
-      up = true;
-    }
-    else if (digitalRead(4))
-    {
-      up = false;
-    }
-    */
-    
+    //Serial.print("test");
+        
   }
   else
   {
-// Set servo goal position
+  // Set servo goal position
   dxl.setGoalPosition(DXL_ID, servoAngle, UNIT_DEGREE);
-  joystick.setOverride(true);
+  servo.setOverride(true);
   dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID, SERVO_MAX_VELOCITY);
-  Serial.println(digitalRead(5));
     if(digitalRead(5))
     {
-      joystick.setOverride(false);
+      servo.setOverride(false);
     }
+  float presentPosition = dxl.getPresentPosition(DXL_ID, UNIT_DEGREE);
+  //Serial.print("Present Position (degree): ");
+  //Serial.println(presentPosition);
 
   }
   //Serial.println(dxl.writeControlTableItem(PROFILE_ACCELERATION, DXL_ID, 30));
@@ -212,9 +198,7 @@ void loop() {
   */
   // Read and print the current servo position
   
-  float presentPosition = dxl.getPresentPosition(DXL_ID, UNIT_DEGREE);
-  Serial.print("Present Position (degree): ");
-  Serial.println(presentPosition);
+  
   
   delay(10);
 }
